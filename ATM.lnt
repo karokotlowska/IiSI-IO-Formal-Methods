@@ -1,0 +1,145 @@
+module ATM is
+
+type AuthenticationOrder is
+	type_pin, confirm_pin
+end type
+
+type WithdrawalOrder is
+	custom_amount, predefined_amount, cancel
+end type
+
+channel ack is
+	(amount: int)
+end channel
+
+
+process Authentication_process(in order: AuthenticationOrder) is
+	var correctPin: BOOL in 
+		hide typing_pin, confirming, correct_pin, incorrect_pin: any in
+			case order in
+				type_pin -> typing_pin
+				| confirm_pin -> confirming
+			end case
+		end hide
+	end var
+	--zdefiniowac selecta czy sie udalo czy nie
+end process
+
+process Authentication[authentication, chose_amount: ack, cancel:any] is
+	var correctPin: BOOL in 
+	Authentication_process(type_pin);
+	Authentication_process(confirm_pin);
+	
+	hide correct_pin, incorrect_pin: any in
+		select
+			correct_pin;
+			correctPin:= true
+			[]
+			incorrect_pin;
+			correctPin:= false
+			end select
+	end hide;
+	if correctPin == true then
+		select
+			select	
+			Withdrawal[chose_amount, cancel] 
+			[]
+			Deposit[cancel]
+			[]
+			AccountStatement[cancel]
+			end select
+		[] 
+		cancel
+		end select
+	end if
+	end var
+end process
+
+process Withdrawal[chose_amount: ack, cancel:any] is
+	hide withdraw_money: any in
+		withdraw_money;
+		select
+			Withdrawal_process[chose_amount, cancel](custom_amount)
+			[]
+			Withdrawal_process[chose_amount, cancel](predefined_amount)
+			[]
+			Withdrawal_process[chose_amount, cancel](cancel)
+		end select
+	end hide
+end process
+
+process Withdrawal_process[chose_amount: ack, cancel: any](in order: WithdrawalOrder) is
+	hide insert_custom_amount, inserting, accept_amount, print_confirmation, opening, choose_amount: any in
+		case order in
+			custom_amount -> insert_custom_amount; inserting; accept_amount;
+			par opening in 
+				print_confirmation
+				||
+				CashBox[cancel]
+			end par
+			| predefined_amount -> choose_amount;
+			par opening in 
+				predefinedAmount_withdrawal_choose[chose_amount]
+				||
+				CashBox[cancel]
+			end par
+			| cancel -> cancel
+		end case
+	end hide
+end process
+
+
+
+process predefinedAmount_withdrawal_process[chose_amount: ack](amount: int) is
+	chose_amount(amount)
+end process
+
+process predefinedAmount_withdrawal_choose[chose_amount: ack]() is
+	hide cancel: any in		
+		select
+			predefinedAmount_withdrawal_process[chose_amount](10)
+			[]
+			predefinedAmount_withdrawal_process[chose_amount](20)
+			[]
+			predefinedAmount_withdrawal_process[chose_amount](50)
+			[]
+			predefinedAmount_withdrawal_process[chose_amount](100)
+		end select
+	end hide
+end process
+
+process Deposit[cancel:any] is
+	hide deposit, opening, accept_insertion, confirmation: any in
+		deposit;
+		select
+		        par opening in 
+				accept_insertion; confirmation
+				||
+				CashBox[cancel]
+			end par
+			[]
+			cancel
+		end select
+	end hide
+end process
+
+process AccountStatement[cancel:any] is
+	hide print_account_statement: any in
+		print_account_statement
+	end hide
+end process
+
+process CashBox[cancel:any] is
+	hide open_cashbox, close_cashbox: any in
+		open_cashbox; close_cashbox
+	end hide
+end process
+
+
+process Main [enter_authentication, chose_amount: ack, cancel: any] is
+	loop
+		Authentication[enter_authentication, chose_amount, cancel]
+	end loop																																																																																																																																																			
+end process
+
+end module

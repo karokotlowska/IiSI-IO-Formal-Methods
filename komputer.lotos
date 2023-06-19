@@ -1,0 +1,19 @@
+specification BITALT [EDYTUJ, DRUKUJ, ANULUJ] : exit behaviour 
+                P [DRUKUJ, ANULUJ] |[DRUKUJ]| KOMPUTER [EDYTUJ, DRUKUJ]
+
+where
+
+        process P [DRUKUJ, ANULUJ] : exit :=
+                DRUKUJ; P [DRUKUJ, ANULUJ]
+		[]
+		ANULUJ; P [DRUKUJ, ANULUJ]
+        endproc
+
+	process KOMPUTER [EDYTUJ, DRUKUJ]: exit :=
+		EDYTUJ; 
+		DRUKUJ;
+			exit
+		>> KOMPUTER [EDYTUJ, DRUKUJ] 
+	endproc
+
+endspec
