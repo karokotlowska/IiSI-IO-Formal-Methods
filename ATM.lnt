@@ -22,7 +22,6 @@ process Authentication_process(in order: AuthenticationOrder) is
 			end case
 		end hide
 	end var
-	--zdefiniowac selecta czy sie udalo czy nie
 end process
 
 process Authentication[authentication, chose_amount: ack, cancel:any] is
